@@ -159,8 +159,9 @@ class IOLoop(object):
         self._events.pop(fd, None)
         try:
             self._impl.unregister(fd)
-        except (OSError, IOError):
-            logging.debug("Error deleting fd from IOLoop", exc_info=True)
+        except (OSError, IOError), e:
+            if not (hasattr(e, 'errno') and e.errno == errno.EBADF):
+                logging.debug("Error deleting fd from IOLoop", exc_info=True)
 
     def set_blocking_log_threshold(self, s):
         """Logs a stack trace if the ioloop is blocked for more than s seconds.
