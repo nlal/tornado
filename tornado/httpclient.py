@@ -526,6 +526,7 @@ def _curl_setup_request(curl, request, buffer, headers):
     curl.setopt(pycurl.MAXREDIRS, request.max_redirects)
     curl.setopt(pycurl.CONNECTTIMEOUT, int(request.connect_timeout))
     curl.setopt(pycurl.TIMEOUT, int(request.request_timeout))
+    curl.setopt(pycurl.SSL_VERIFYPEER, False)
     if request.user_agent:
         curl.setopt(pycurl.USERAGENT, _utf8(request.user_agent))
     else:
