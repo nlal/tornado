@@ -93,7 +93,7 @@ def NullContext():
   finally:
     _state.contexts = old_contexts
 
-def wrap(fn, *args, **kwargs):
+def old_wrap(fn, *args, **kwargs):
   '''Returns a callable object that will resore the current StackContext
   when executed.
 
@@ -139,3 +139,16 @@ def wrap(fn, *args, **kwargs):
   else:
     return callback
 
+def wrap(fn, *a, **kw):
+  my_contexts = _state.contexts
+  if a or kw:
+    fn = partial(fn, *a, **kw)
+
+  def wrapper(*a2, **kw2):
+    with contextlib.nested(*[StackContext(c) for c in my_contexts]):
+      fn(*a2, **kw2)
+
+  if my_contexts:
+    return wrapper
+  else:
+    return fn
