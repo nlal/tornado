@@ -19,8 +19,10 @@
 import errno
 import logging
 import socket
+import contextlib
 
 from tornado import ioloop
+from tornado import stack_context
 
 try:
     import ssl # Python 2.6+
@@ -173,9 +175,10 @@ class IOStream(object):
             self._state = state
             self.io_loop.update_handler(self.socket.fileno(), self._state)
 
-    def _run_callback(self, callback, *args, **kwargs):
+    @contextlib.contextmanager
+    def _stack_context(self):
         try:
-            callback(*args, **kwargs)
+            yield
         except:
             # Close the socket on an uncaught exception from a user callback
             # (It would eventually get closed when the socket object is
@@ -185,6 +188,10 @@ class IOStream(object):
             # Re-raise the exception so that IOLoop.handle_callback_exception
             # can see it and log the error
             raise
+
+    def _run_callback(self, callback, *args, **kwargs):
+        with stack_context.StackContext(self._stack_context):
+            stack_context.wrap(callback)(*args, **kwargs)
 
     def _handle_read(self):
         while True:
