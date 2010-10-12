@@ -177,7 +177,10 @@ class IOStream(object):
 
     def _run_callback(self, callback, *args, **kwargs):
         try:
-            callback(*args, **kwargs)
+            # Use a NullContext to ensure that all StackContexts are run
+            # inside our blanket exception handler rather than outside.
+            with stack_context.NullContext():
+                callback(*args, **kwargs)
         except:
             logging.error("Uncaught exception, closing connection.",
                           exc_info=True)
@@ -278,7 +281,11 @@ class IOStream(object):
     def _handle_write(self):
         while self._write_buffer:
             try:
-                num_bytes = self.socket.send(self._write_buffer)
+                # On windows, socket.send blows up if given a write buffer
+                # that's too large, instead of just returning the number
+                # of bytes it was able to process.
+                temp_write_buffer = self._write_buffer[:128 * 1024]
+                num_bytes = self.socket.send(temp_write_buffer)
                 self._write_buffer = self._write_buffer[num_bytes:]
             except socket.error, e:
                 if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
