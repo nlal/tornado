@@ -58,7 +58,6 @@ import uuid
 
 from tornado import httpclient
 from tornado import escape
-from tornado.ioloop import IOLoop
 
 class OpenIdMixin(object):
     """Abstract implementation of OpenID and Attribute Exchange.
@@ -280,7 +279,7 @@ class OAuthMixin(object):
             signature = _oauth10a_signature(consumer_token, "GET", url, args)
         else:
             signature = _oauth_signature(consumer_token, "GET", url, args)
-            
+
         args["oauth_signature"] = signature
         return url + "?" + urllib.urlencode(args)
 
@@ -326,7 +325,7 @@ class OAuthMixin(object):
             logging.warning("Could not fetch access token")
             callback(None)
             return
-        
+
         access_token = _oauth_parse_response(response.body)
         user = self._oauth_get_user(access_token, self.async_callback(
              self._on_oauth_get_user, access_token, callback))
