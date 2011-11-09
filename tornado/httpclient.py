@@ -512,6 +512,7 @@ def _curl_create(max_simultaneous_connections=None):
         curl.setopt(pycurl.VERBOSE, 1)
         curl.setopt(pycurl.DEBUGFUNCTION, _curl_debug)
     curl.setopt(pycurl.MAXCONNECTS, max_simultaneous_connections or 5)
+    curl.setopt(pycurl.SSL_SESSIONID_CACHE, False)
     return curl
 
 
