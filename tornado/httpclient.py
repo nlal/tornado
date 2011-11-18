@@ -519,6 +519,8 @@ def _curl_create(max_simultaneous_connections=None):
 def _curl_setup_request(curl, request, buffer, headers):
     curl.setopt(pycurl.URL, request.url)
     # Request headers may be either a regular dict or HTTPHeaders object
+    curl.setopt(pycurl.FORBID_REUSE, True)
+    curl.setopt(pycurl.FRESH_CONNECT, True)
     if isinstance(request.headers, httputil.HTTPHeaders):
         curl.setopt(pycurl.HTTPHEADER,
                     [_utf8("%s: %s" % i) for i in request.headers.get_all()])
