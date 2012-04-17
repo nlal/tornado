@@ -120,7 +120,6 @@ class AsyncHTTPClient(object):
 
     def __new__(cls, io_loop=None, max_clients=10,
                 max_simultaneous_connections=None):
-        # There is one client per IOLoop since they share curl instances
         io_loop = io_loop or ioloop.IOLoop.instance()
         if io_loop in cls._ASYNC_CLIENTS:
             return cls._ASYNC_CLIENTS[io_loop]
@@ -378,7 +377,7 @@ class HTTPRequest(object):
                  network_interface=None, streaming_callback=None,
                  header_callback=None, prepare_curl_callback=None,
                  proxy_host=None, proxy_port=None, proxy_username=None,
-                 proxy_password='', allow_nonstandard_methods=False):
+                 proxy_password='', allow_nonstandard_methods=False, reuse_connection=True):
         if headers is None:
             headers = httputil.HTTPHeaders()
         if if_modified_since:
@@ -421,6 +420,7 @@ class HTTPRequest(object):
         self.prepare_curl_callback = prepare_curl_callback
         self.allow_nonstandard_methods = allow_nonstandard_methods
         self.start_time = time.time()
+        self.reuse_connection = reuse_connection
 
 
 class HTTPResponse(object):
@@ -519,8 +519,11 @@ def _curl_create(max_simultaneous_connections=None):
 def _curl_setup_request(curl, request, buffer, headers):
     curl.setopt(pycurl.URL, request.url)
     # Request headers may be either a regular dict or HTTPHeaders object
-    curl.setopt(pycurl.FORBID_REUSE, True)
-    curl.setopt(pycurl.FRESH_CONNECT, True)
+    if not request.reuse_connection:
+        curl.setopt(pycurl.FORBID_REUSE, True)
+        curl.setopt(pycurl.FRESH_CONNECT, True)
+        # fix BA Scraper's totally lame hang when TLSv1.2 is used
+        curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1)
     if isinstance(request.headers, httputil.HTTPHeaders):
         curl.setopt(pycurl.HTTPHEADER,
                     [_utf8("%s: %s" % i) for i in request.headers.get_all()])
