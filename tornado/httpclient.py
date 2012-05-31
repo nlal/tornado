@@ -119,9 +119,9 @@ class AsyncHTTPClient(object):
     _ASYNC_CLIENTS = weakref.WeakKeyDictionary()
 
     def __new__(cls, io_loop=None, max_clients=10,
-                max_simultaneous_connections=None):
+                max_simultaneous_connections=None, force_instance=False):
         io_loop = io_loop or ioloop.IOLoop.instance()
-        if io_loop in cls._ASYNC_CLIENTS:
+        if io_loop in cls._ASYNC_CLIENTS and not force_instance:
             return cls._ASYNC_CLIENTS[io_loop]
         else:
             instance = super(AsyncHTTPClient, cls).__new__(cls)
@@ -137,7 +137,8 @@ class AsyncHTTPClient(object):
             instance._requests = collections.deque()
             instance._fds = {}
             instance._timeout = None
-            cls._ASYNC_CLIENTS[io_loop] = instance
+            if not force_instance:
+                cls._ASYNC_CLIENTS[io_loop] = instance
 
             try:
                 instance._socket_action = instance._multi.socket_action
