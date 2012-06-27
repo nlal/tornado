@@ -1344,7 +1344,8 @@ class GZipContentEncoding(OutputTransform):
     CONTENT_TYPES = set([
         "text/plain", "text/html", "text/css", "text/xml",
         "application/x-javascript", "application/xml", "application/atom+xml",
-        "text/javascript", "application/json", "application/xhtml+xml"])
+        "text/javascript", "application/json", "application/xhtml+xml",
+        "application/javascript"])
     MIN_LENGTH = 5
 
     def __init__(self, request):
