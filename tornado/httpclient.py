@@ -378,7 +378,8 @@ class HTTPRequest(object):
                  network_interface=None, streaming_callback=None,
                  header_callback=None, prepare_curl_callback=None,
                  proxy_host=None, proxy_port=None, proxy_username=None,
-                 proxy_password='', allow_nonstandard_methods=False, reuse_connection=True):
+                 proxy_password='', allow_nonstandard_methods=False,
+                 reuse_connection=True, any_auth=False):
         if headers is None:
             headers = httputil.HTTPHeaders()
         if if_modified_since:
@@ -422,6 +423,7 @@ class HTTPRequest(object):
         self.allow_nonstandard_methods = allow_nonstandard_methods
         self.start_time = time.time()
         self.reuse_connection = reuse_connection
+        self.any_auth = any_auth
 
 
 class HTTPResponse(object):
@@ -599,7 +601,11 @@ def _curl_setup_request(curl, request, buffer, headers):
 
     if request.auth_username and request.auth_password:
         userpwd = "%s:%s" % (request.auth_username, request.auth_password)
-        curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
+        if request.any_auth:
+            curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_ANY)
+        else:
+            curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
+
         curl.setopt(pycurl.USERPWD, userpwd)
         logging.info("%s %s (username: %r)", request.method, request.url,
                      request.auth_username)
