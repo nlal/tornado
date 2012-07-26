@@ -378,8 +378,7 @@ class HTTPRequest(object):
                  network_interface=None, streaming_callback=None,
                  header_callback=None, prepare_curl_callback=None,
                  proxy_host=None, proxy_port=None, proxy_username=None,
-                 proxy_password='', allow_nonstandard_methods=False,
-                 reuse_connection=True, any_auth=False):
+                 proxy_password='', allow_nonstandard_methods=False):
         if headers is None:
             headers = httputil.HTTPHeaders()
         if if_modified_since:
@@ -422,8 +421,6 @@ class HTTPRequest(object):
         self.prepare_curl_callback = prepare_curl_callback
         self.allow_nonstandard_methods = allow_nonstandard_methods
         self.start_time = time.time()
-        self.reuse_connection = reuse_connection
-        self.any_auth = any_auth
 
 
 class HTTPResponse(object):
@@ -522,11 +519,6 @@ def _curl_create(max_simultaneous_connections=None):
 def _curl_setup_request(curl, request, buffer, headers):
     curl.setopt(pycurl.URL, request.url)
     # Request headers may be either a regular dict or HTTPHeaders object
-    if not request.reuse_connection:
-        curl.setopt(pycurl.FORBID_REUSE, True)
-        curl.setopt(pycurl.FRESH_CONNECT, True)
-        # fix BA Scraper's totally lame hang when TLSv1.2 is used
-        curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1)
     if isinstance(request.headers, httputil.HTTPHeaders):
         curl.setopt(pycurl.HTTPHEADER,
                     [_utf8("%s: %s" % i) for i in request.headers.get_all()])
@@ -601,10 +593,7 @@ def _curl_setup_request(curl, request, buffer, headers):
 
     if request.auth_username and request.auth_password:
         userpwd = "%s:%s" % (request.auth_username, request.auth_password)
-        if request.any_auth:
-            curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_ANY)
-        else:
-            curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
+        curl.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
 
         curl.setopt(pycurl.USERPWD, userpwd)
         logging.info("%s %s (username: %r)", request.method, request.url,
