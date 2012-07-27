@@ -378,7 +378,8 @@ class HTTPRequest(object):
                  network_interface=None, streaming_callback=None,
                  header_callback=None, prepare_curl_callback=None,
                  proxy_host=None, proxy_port=None, proxy_username=None,
-                 proxy_password='', allow_nonstandard_methods=False):
+                 proxy_password='', allow_nonstandard_methods=False,
+                 curl_settings=None):
         if headers is None:
             headers = httputil.HTTPHeaders()
         if if_modified_since:
@@ -421,6 +422,7 @@ class HTTPRequest(object):
         self.prepare_curl_callback = prepare_curl_callback
         self.allow_nonstandard_methods = allow_nonstandard_methods
         self.start_time = time.time()
+        self.curl_settings = curl_settings or set()
 
 
 class HTTPResponse(object):
@@ -611,6 +613,25 @@ def _curl_setup_request(curl, request, buffer, headers):
         # there may not be any other threads running at the time we call
         # threading.activeCount.
         curl.setopt(pycurl.NOSIGNAL, 1)
+
+    # special curl settings used for different scrapers
+    if 'no-keep-alive' in request.curl_settings:
+        curl.setopt(pycurl.FORBID_REUSE, True)
+        curl.setopt(pycurl.FRESH_CONNECT, True)
+    else:
+        curl.setopt(pycurl.FORBID_REUSE, False)
+        curl.setopt(pycurl.FRESH_CONNECT, False)
+
+    if 'tlsv1' in request.curl_settings:
+        curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1)
+    else:
+        curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_DEFAULT)
+
+    if '3des' in request.curl_settings:
+        curl.setopt(pycurl.SSL_CIPHER_LIST, '3DES')
+    else:
+        curl.unsetopt(pycurl.SSL_CIPHER_LIST)
+
     if request.prepare_curl_callback is not None:
         request.prepare_curl_callback(curl)
 
