@@ -503,7 +503,7 @@ class HTTPRequest(object):
         attrs = ["protocol", "host", "method", "uri", "version", "remote_ip",
                  "remote_ip"]
 
-        if not getattr(self, 'secure'):
+        if not self.secure:
             # don't log the bodies of secure requests
             attrs.append("body")
 
