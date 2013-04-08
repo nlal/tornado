@@ -23,6 +23,7 @@ import os
 import socket
 import time
 import urlparse
+import re
 
 from tornado import httputil
 from tornado import ioloop
@@ -450,6 +451,7 @@ class HTTPRequest(object):
         self.connection = connection
         self._start_time = time.time()
         self._finish_time = None
+        self.secure = False
 
         scheme, netloc, path, query, fragment = urlparse.urlsplit(uri)
         self.path = path
@@ -485,9 +487,26 @@ class HTTPRequest(object):
         else:
             return self._finish_time - self._start_time
 
+    def _filtered_headers(self):
+        """Filter out secure looking cookies for logging"""
+        headers = dict(self.headers)
+
+        cookies_header = headers.get('Cookie')
+        # delete any secure-looking cookies
+        if cookies_header:
+            filtered_cookies = re.sub(r"\w+(_pw|password)=.*?;", '', cookies_header)
+            headers['Cookie'] = filtered_cookies
+
+        return headers
+
     def __repr__(self):
-        attrs = ("protocol", "host", "method", "uri", "version", "remote_ip",
-                 "remote_ip", "body")
+        attrs = ["protocol", "host", "method", "uri", "version", "remote_ip",
+                 "remote_ip"]
+
+        if not self.secure:
+            # don't log the bodies of secure requests
+            attrs.append("body")
+
         args = ", ".join(["%s=%r" % (n, getattr(self, n)) for n in attrs])
         return "%s(%s, headers=%s)" % (
-            self.__class__.__name__, args, dict(self.headers))
+            self.__class__.__name__, args, self._filtered_headers())

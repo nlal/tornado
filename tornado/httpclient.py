@@ -422,7 +422,12 @@ class HTTPRequest(object):
         self.prepare_curl_callback = prepare_curl_callback
         self.allow_nonstandard_methods = allow_nonstandard_methods
         self.start_time = time.time()
-        self.curl_settings = curl_settings or set()
+
+        self.curl_settings = curl_settings or {}
+
+        if isinstance(self.curl_settings, set):
+            # backwards compat 2013-03-29
+            self.curl_settings = dict(map(lambda x: (x, True), self.curl_settings))
 
 
 class HTTPResponse(object):
@@ -614,6 +619,19 @@ def _curl_setup_request(curl, request, buffer, headers):
         # threading.activeCount.
         curl.setopt(pycurl.NOSIGNAL, 1)
 
+    # so that we can die on unknown values
+    known_curl_settings = set((
+        'no-keep-alive',
+        'tlsv1',
+        '3des',
+        'ssl-verify-peer',
+        'cainfo',
+    ))
+    used_but_unknown = set(request.curl_settings) - known_curl_settings
+    if used_but_unknown:
+        raise Exception("some curl_settings where specified but will be ignored (%r)"
+                        % (used_but_unknown,))
+
     # special curl settings used for different scrapers
     if 'no-keep-alive' in request.curl_settings:
         curl.setopt(pycurl.FORBID_REUSE, True)
@@ -632,9 +650,16 @@ def _curl_setup_request(curl, request, buffer, headers):
     else:
         curl.unsetopt(pycurl.SSL_CIPHER_LIST)
 
+    if 'ssl-verify-peer' in request.curl_settings:
+        curl.setopt(pycurl.SSL_VERIFYPEER, 1)
+
+    if 'cainfo' in request.curl_settings:
+        curl.setopt(pycurl.CAINFO, request.curl_settings['cainfo'])
+    else:
+        curl.unsetopt(pycurl.CAINFO)
+
     if request.prepare_curl_callback is not None:
         request.prepare_curl_callback(curl)
-
 
 def _curl_header_callback(headers, header_line):
     # header_line as returned by curl includes the end-of-line characters.
