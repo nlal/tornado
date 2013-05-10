@@ -362,7 +362,10 @@ class HTTPConnection(object):
                     boundary = content_type.split('boundary=',1)[1]
                     if boundary: self._parse_mime_body(boundary, data)
                 else:
-                    logging.warning("Invalid multipart/form-data")
+                    logging.warning("Invalid multipart/form-data on %s:%s (%s)",
+                                    self._request.method, self._request.uri,
+                                    self._request.remote_ip)
+
         self.request_callback(self._request)
 
     def _parse_mime_body(self, boundary, data):
