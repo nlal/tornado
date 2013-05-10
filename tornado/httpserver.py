@@ -362,7 +362,7 @@ class HTTPConnection(object):
                     boundary = content_type.split('boundary=',1)[1]
                     if boundary: self._parse_mime_body(boundary, data)
                 else:
-                    logging.warning("Invalid multipart/form-data on %s:%s (%s)",
+                    logging.warning("Invalid multipart/form-data on %s:%r (%s)",
                                     self._request.method, self._request.uri,
                                     self._request.remote_ip)
 
@@ -391,7 +391,9 @@ class HTTPConnection(object):
             name_header = headers.get("Content-Disposition", "")
             if not name_header.startswith("form-data;") or \
                not part.endswith("\r\n"):
-                logging.warning("Invalid multipart/form-data")
+                logging.warning("Invalid multipart/form-data on %s:%r (%s)",
+                                self._request.method, self._request.uri,
+                                self._request.remote_ip)
                 continue
             value = part[eoh + 4:-2]
             name_values = {}
