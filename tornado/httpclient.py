@@ -626,6 +626,8 @@ def _curl_setup_request(curl, request, buffer, headers):
         '3des',
         'ssl-verify-peer',
         'cainfo',
+        'cert',
+        'key',
     ))
     used_but_unknown = set(request.curl_settings) - known_curl_settings
     if used_but_unknown:
@@ -657,6 +659,11 @@ def _curl_setup_request(curl, request, buffer, headers):
         curl.setopt(pycurl.CAINFO, request.curl_settings['cainfo'])
     else:
         curl.unsetopt(pycurl.CAINFO)
+
+    if 'cert' in request.curl_settings:
+        curl.setopt(pycurl.SSLCERT, request.curl_settings['cert'])
+        if 'key' in request.curl_settings:
+            curl.setopt(pycurl.SSLKEY, request.curl_settings['key'])
 
     if request.prepare_curl_callback is not None:
         request.prepare_curl_callback(curl)
