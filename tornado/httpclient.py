@@ -312,8 +312,7 @@ class AsyncHTTPClient(object):
                     # Disable IPv6 to mitigate the effects of this bug
                     # on curl versions <= 7.21.0
                     # http://sourceforge.net/tracker/?func=detail&aid=3017819&group_id=976&atid=100976
-                    if pycurl.version_info()[2] <= 0x71500:  # 7.21.0
-                        curl.setopt(pycurl.IPRESOLVE, pycurl.IPRESOLVE_V4)
+                    curl.setopt(pycurl.IPRESOLVE, pycurl.IPRESOLVE_V4)
                     _curl_setup_request(curl, request, curl.info["buffer"],
                                         curl.info["headers"])
                     self._multi.add_handle(curl)
