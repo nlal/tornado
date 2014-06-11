@@ -627,10 +627,11 @@ def _curl_setup_request(curl, request, buffer, headers):
         'cainfo',
         'cert',
         'key',
+        'sslv3',
     ))
     used_but_unknown = set(request.curl_settings) - known_curl_settings
     if used_but_unknown:
-        raise Exception("some curl_settings where specified but will be ignored (%r)"
+        raise Exception("some curl_settings were specified but will be ignored (%r)"
                         % (used_but_unknown,))
 
     # special curl settings used for different scrapers
@@ -641,12 +642,20 @@ def _curl_setup_request(curl, request, buffer, headers):
         curl.setopt(pycurl.FORBID_REUSE, False)
         curl.setopt(pycurl.FRESH_CONNECT, False)
 
-    if 'tlsv1' in request.curl_settings:
+    if 'sslv3' in request.curl_settings and '3des' in request.curl_settings:
+        raise Exception("we don't support sslv3 and 3des at the same time")
+
+    if 'sslv3' in request.curl_settings:
+        curl.setopt(pycurl.SSLVERSION, 3)
+        curl.setopt(pycurl.SSL_CIPHER_LIST, 'SSLv3')
+    elif 'tlsv1' in request.curl_settings:
         curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1)
     else:
         curl.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_DEFAULT)
 
-    if '3des' in request.curl_settings:
+    if 'sslv3' in request.curl_settings:
+        pass # already set it
+    elif '3des' in request.curl_settings:
         curl.setopt(pycurl.SSL_CIPHER_LIST, '3DES')
     else:
         curl.unsetopt(pycurl.SSL_CIPHER_LIST)
