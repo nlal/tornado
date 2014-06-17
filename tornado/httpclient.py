@@ -505,7 +505,6 @@ class HTTPError(Exception):
         self.response = response
         Exception.__init__(self, "HTTP %d: %s" % (self.code, message))
 
-
 class CurlError(HTTPError):
     def __init__(self, errno, message):
         HTTPError.__init__(self, 599, message)
@@ -624,6 +623,7 @@ def _curl_setup_request(curl, request, buffer, headers):
         'tlsv1',
         '3des',
         'ssl-verify-peer',
+        'ssl-insecure',
         'cainfo',
         'cert',
         'key',
@@ -659,6 +659,10 @@ def _curl_setup_request(curl, request, buffer, headers):
         curl.setopt(pycurl.SSL_CIPHER_LIST, '3DES')
     else:
         curl.unsetopt(pycurl.SSL_CIPHER_LIST)
+
+    if 'ssl-insecure' in request.curl_settings:
+        curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+        curl.setopt(pycurl.SSL_VERIFYPEER, 0)
 
     if 'ssl-verify-peer' in request.curl_settings:
         curl.setopt(pycurl.SSL_VERIFYPEER, 1)
