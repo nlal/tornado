@@ -15,8 +15,10 @@
 # under the License.
 
 """HTTP utility code shared by clients and servers."""
+from collections import OrderedDict
 
-class HTTPHeaders(dict):
+
+class HTTPHeaders(OrderedDict):
     """A dictionary that maintains Http-Header-Case for all keys.
 
     Supports multiple values per key via a pair of new methods,
@@ -46,7 +48,7 @@ class HTTPHeaders(dict):
     def __init__(self, *args, **kwargs):
         # Don't pass args or kwargs to dict.__init__, as it will bypass
         # our __setitem__
-        dict.__init__(self)
+        OrderedDict.__init__(self)
         self._as_list = {}
         self.update(*args, **kwargs)
 
@@ -57,7 +59,7 @@ class HTTPHeaders(dict):
         norm_name = HTTPHeaders._normalize_name(name)
         if norm_name in self:
             # bypass our override of __setitem__ since it modifies _as_list
-            dict.__setitem__(self, norm_name, self[norm_name] + ',' + value)
+            OrderedDict.__setitem__(self, norm_name, self[norm_name] + ',' + value)
             self._as_list[norm_name].append(value)
         else:
             self[norm_name] = value
@@ -106,19 +108,19 @@ class HTTPHeaders(dict):
 
     def __setitem__(self, name, value):
         norm_name = HTTPHeaders._normalize_name(name)
-        dict.__setitem__(self, norm_name, value)
+        OrderedDict.__setitem__(self, norm_name, value)
         self._as_list[norm_name] = [value]
 
     def __getitem__(self, name):
-        return dict.__getitem__(self, HTTPHeaders._normalize_name(name))
+        return OrderedDict.__getitem__(self, HTTPHeaders._normalize_name(name))
 
     def __delitem__(self, name):
         norm_name = HTTPHeaders._normalize_name(name)
-        dict.__delitem__(self, norm_name)
+        OrderedDict.__delitem__(self, norm_name)
         del self._as_list[norm_name]
 
     def get(self, name, default=None):
-        return dict.get(self, HTTPHeaders._normalize_name(name), default)
+        return OrderedDict.get(self, HTTPHeaders._normalize_name(name), default)
 
     def update(self, *args, **kwargs):
         # dict.update bypasses our __setitem__
